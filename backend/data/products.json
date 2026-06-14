@@ -1,0 +1,18 @@
+[
+  {
+    "part_number": "PS11752778",
+    "name": "Dishwasher Upper Rack Adjuster",
+    "price": 34.99,
+    "brand": "Whirlpool",
+    "category": "Dishwasher",
+    "description": "Adjusts upper rack height."
+  },
+  {
+    "part_number": "PS12345678",
+    "name": "Ice Maker Assembly",
+    "price": 129.99,
+    "brand": "Whirlpool",
+    "category": "Refrigerator",
+    "description": "Produces ice for refrigerator."
+  }
+]
