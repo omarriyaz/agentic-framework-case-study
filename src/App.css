@@ -61,6 +61,44 @@ body {
 .header-right {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.mode-toggle {
+  display: flex;
+  background: rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.mode-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.65);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 5px 14px;
+  border-radius: 17px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  white-space: nowrap;
+}
+
+.mode-btn:hover {
+  color: white;
+  background: rgba(255,255,255,0.12);
+}
+
+.mode-btn--active {
+  background: white;
+  color: #c0392b;
+}
+
+.mode-btn--active:hover {
+  background: white;
+  color: #c0392b;
 }
 
 .header-badge {

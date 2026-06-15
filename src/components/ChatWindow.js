@@ -7,7 +7,7 @@ import FlowCard from "./FlowCard";
 import { FLOWS } from "../flows/flows";
 
 
-function ChatWindow({ rememberedModel, onModelDetected }) {
+function ChatWindow({ rememberedModel, onModelDetected, mode = "homeowner" }) {
 
   const defaultMessage = [{
     role: "assistant",
@@ -71,6 +71,7 @@ function ChatWindow({ rememberedModel, onModelDetected }) {
         body: JSON.stringify({
           message: `Add part ${part.part_number} to my cart`,
           history: messages,
+          mode,
         }),
       });
     } catch (err) {
@@ -94,7 +95,7 @@ function ChatWindow({ rememberedModel, onModelDetected }) {
 
     try {
       setIsLoading(true);
-      const newMessage = await getAIMessage(userText, messages, rememberedModel);
+      const newMessage = await getAIMessage(userText, messages, rememberedModel, mode);
       if (newMessage.detected_model && !rememberedModel) {
         onModelDetected(newMessage.detected_model);
       }

@@ -1,4 +1,4 @@
-export const getAIMessage = async (userQuery, history = [], rememberedModel = null) => {
+export const getAIMessage = async (userQuery, history = [], rememberedModel = null, mode = "homeowner") => {
   const cleanHistory = history
     .filter(m => (m.role === "user" || m.role === "assistant") && m.content)
     .map(m => ({ role: m.role, content: m.content }));
@@ -6,7 +6,7 @@ export const getAIMessage = async (userQuery, history = [], rememberedModel = nu
   const res = await fetch("http://localhost:8000/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: userQuery, history: cleanHistory, remembered_model: rememberedModel }),
+    body: JSON.stringify({ message: userQuery, history: cleanHistory, remembered_model: rememberedModel, mode }),
   });
 
   const data = await res.json();
