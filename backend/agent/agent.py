@@ -1,8 +1,12 @@
 import json
+import re
 import ollama
 
 from .tools import TOOLS
 from .prompts import SYSTEM_PROMPT
+
+# Matches typical appliance model numbers: 6-20 alphanumeric chars with optional dashes
+_MODEL_NUMBER_RE = re.compile(r'\b([A-Z]{1,4}[\d]{3,}[A-Z0-9\-]{2,}|[\d]{5,}[A-Z]{1,4}[\d]*)\b')
 
 TOOLS_SCHEMA = [
     {
@@ -180,6 +184,7 @@ async def run_agent(user_message, history=[]):
 
     collected_parts = []
     seen_part_numbers = set()
+    detected_model = None
 
     while True:
 
@@ -196,13 +201,22 @@ async def run_agent(user_message, history=[]):
 
         if not tool_calls:
             reply = assistant_message["content"]
+            # Fallback: regex scan the user message if no tool gave us a model
+            if not detected_model:
+                match = _MODEL_NUMBER_RE.search(user_message.upper())
+                if match:
+                    detected_model = match.group(1)
             chips = _generate_chips(messages, reply)
-            return reply, collected_parts, chips
+            return reply, collected_parts, chips, detected_model
 
         for tool_call in tool_calls:
             tool_name = tool_call["function"]["name"]
             args = tool_call["function"]["arguments"]
             result = TOOLS[tool_name](**args)
+
+            # Capture model number from compatibility checks
+            if tool_name == "check_compatibility" and not detected_model:
+                detected_model = args.get("model_number")
 
             for part in _extract_parts(tool_name, result):
                 pn = part.get("part_number")

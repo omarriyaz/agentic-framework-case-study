@@ -1,8 +1,8 @@
-export const getAIMessage = async (userQuery, history = []) => {
+export const getAIMessage = async (userQuery, history = [], rememberedModel = null) => {
   const res = await fetch("http://localhost:8000/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: userQuery, history }),
+    body: JSON.stringify({ message: userQuery, history, remembered_model: rememberedModel }),
   });
 
   const data = await res.json();
@@ -12,5 +12,6 @@ export const getAIMessage = async (userQuery, history = []) => {
     content: data.response,
     parts: data.parts || [],
     chips: data.chips || [],
+    detected_model: data.detected_model || null,
   };
 };

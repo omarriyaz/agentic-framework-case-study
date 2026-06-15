@@ -20,8 +20,17 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     history: list[ChatMessage] = []
+    remembered_model: str | None = None
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    response, parts, chips = await run_agent(req.message, req.history)
-    return {"response": response, "parts": parts, "chips": chips}
+    message = req.message
+    if req.remembered_model:
+        message = f"[User's appliance model: {req.remembered_model}]\n{message}"
+    response, parts, chips, detected_model = await run_agent(message, req.history)
+    return {
+        "response": response,
+        "parts": parts,
+        "chips": chips,
+        "detected_model": detected_model,
+    }

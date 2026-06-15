@@ -5,7 +5,7 @@ import { marked } from "marked";
 import PartCard from "./PartCard";
 
 
-function ChatWindow() {
+function ChatWindow({ rememberedModel, onModelDetected }) {
 
   const defaultMessage = [{
     role: "assistant",
@@ -53,7 +53,10 @@ function ChatWindow() {
 
     try {
       setIsLoading(true);
-      const newMessage = await getAIMessage(userText, messages);
+      const newMessage = await getAIMessage(userText, messages, rememberedModel);
+      if (newMessage.detected_model && !rememberedModel) {
+        onModelDetected(newMessage.detected_model);
+      }
       setMessages(prev => [...prev, newMessage]);
     } catch (err) {
       setMessages(prev => [...prev, {

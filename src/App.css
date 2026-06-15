@@ -58,6 +58,11 @@ body {
   letter-spacing: 0.8px;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
 .header-badge {
   background: rgba(255,255,255,0.12);
   color: rgba(255,255,255,0.85);
@@ -65,4 +70,56 @@ body {
   padding: 4px 10px;
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,0.2);
+}
+
+.model-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(232, 32, 42, 0.2);
+  border: 1px solid rgba(232, 32, 42, 0.5);
+  border-radius: 20px;
+  padding: 5px 6px 5px 12px;
+  animation: pill-in 0.25s ease;
+}
+
+@keyframes pill-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.model-pill-label {
+  color: rgba(255,255,255,0.6);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.model-pill-value {
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: monospace;
+  letter-spacing: 0.5px;
+}
+
+.model-pill-clear {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: rgba(255,255,255,0.7);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 9px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 0.15s;
+}
+
+.model-pill-clear:hover {
+  background: rgba(255,255,255,0.3);
+  color: white;
 }
