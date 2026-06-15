@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./ChatWindow.css";
-import { getAIMessage } from "../api/api";
+import { streamAIMessage } from "../api/api";
 import { marked } from "marked";
 import PartCard from "./PartCard";
 import FlowCard from "./FlowCard";
@@ -92,20 +92,41 @@ function ChatWindow({ rememberedModel, onModelDetected, mode = "homeowner" }) {
     setMessages(prev => [...prev, { role: "user", content: userText, parts: [] }]);
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
+    setIsLoading(true);
+
+    // Placeholder shows typing dots until the first token arrives
+    setMessages(prev => [...prev, { role: "assistant", content: "", parts: [], chips: [], streaming: true }]);
 
     try {
-      setIsLoading(true);
-      const newMessage = await getAIMessage(userText, messages, rememberedModel, mode);
-      if (newMessage.detected_model && !rememberedModel) {
-        onModelDetected(newMessage.detected_model);
-      }
-      setMessages(prev => [...prev, newMessage]);
+      await streamAIMessage(
+        userText,
+        messages,
+        rememberedModel,
+        mode,
+        (token) => {
+          setMessages(prev => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            updated[updated.length - 1] = { ...last, content: last.content + token, streaming: false };
+            return updated;
+          });
+        },
+        (data) => {
+          setMessages(prev => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            updated[updated.length - 1] = { ...last, parts: data.parts || [], chips: data.chips || [], streaming: false };
+            return updated;
+          });
+          if (data.detected_model && !rememberedModel) onModelDetected(data.detected_model);
+        },
+      );
     } catch (err) {
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: "Sorry, something went wrong. Please try again.",
-        parts: [],
-      }]);
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { ...updated[updated.length - 1], content: "Sorry, something went wrong. Please try again.", streaming: false };
+        return updated;
+      });
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -145,7 +166,7 @@ function ChatWindow({ rememberedModel, onModelDetected, mode = "homeowner" }) {
     <div className="messages-container">
       {messages.map((message, index) => {
         const isLastAssistant = message.role === "assistant" && index === lastAssistantIndex;
-        const chips = isLastAssistant && !isLoading && index > 0 ? (message.chips || []) : [];
+        const chips = isLastAssistant && !isLoading && !message.streaming && index > 0 ? (message.chips || []) : [];
 
         if (message.role === "flow") {
           return (
@@ -167,7 +188,11 @@ function ChatWindow({ rememberedModel, onModelDetected, mode = "homeowner" }) {
             )}
             <div className="message-col">
               <div className={`message ${message.role}-message`}>
-                <div dangerouslySetInnerHTML={{ __html: marked(message.content || "").replace(/<p>|<\/p>/g, "") }} />
+                {message.streaming && !message.content ? (
+                  <div className="typing-indicator"><span /><span /><span /></div>
+                ) : (
+                  <div dangerouslySetInnerHTML={{ __html: marked(message.content || "").replace(/<p>|<\/p>/g, "").replace(/<img[^>]*>/g, "") }} />
+                )}
               </div>
               {message.parts?.length > 0 && (
                 <div className="part-cards-grid">
@@ -196,14 +221,6 @@ function ChatWindow({ rememberedModel, onModelDetected, mode = "homeowner" }) {
           </div>
         );
       })}
-      {isLoading && (
-        <div className="message-row assistant-row">
-          <div className="avatar assistant-avatar">PS</div>
-          <div className="message assistant-message typing-indicator">
-            <span /><span /><span />
-          </div>
-        </div>
-      )}
       <div ref={messagesEndRef} />
       <div className="input-wrapper">
         <div className="input-area">

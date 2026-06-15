@@ -102,6 +102,12 @@
   color: var(--brand, #337778);
 }
 
+/* Images belong in part cards only — suppress them in chat bubbles */
+.assistant-message img,
+.user-message img {
+  display: none;
+}
+
 /* ── Typing indicator ── */
 
 .typing-indicator {

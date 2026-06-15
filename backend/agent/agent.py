@@ -31,13 +31,7 @@ SAFE means the message is a genuine customer support question about:
 
 Reply with ONLY the single word: SAFE or UNSAFE"""
 
-_CHIP_WHITELIST_TOPICS = [
-    "part compatibility", "installation", "troubleshooting", "part search",
-    "order status", "add to cart", "related parts", "part price", "part details",
-    "model number", "symptom diagnosis", "repair difficulty"
-]
-
-# Matches typical appliance model numbers: 6-20 alphanumeric chars with optional dashes
+# Matches typical appliance model numbers
 _MODEL_NUMBER_RE = re.compile(r'\b([A-Z]{1,4}[\d]{3,}[A-Z0-9\-]{2,}|[\d]{5,}[A-Z]{1,4}[\d]*)\b')
 
 TOOLS_SCHEMA = [
@@ -157,34 +151,25 @@ TOOLS_SCHEMA = [
     }
 ]
 
+
 def _extract_parts(tool_name, result):
-    """Pull product dicts out of any tool result that contains them."""
     if not isinstance(result, (dict, list)):
         return []
-
-    # Tools that return a list of parts directly
     if tool_name == "search_parts" and isinstance(result, list):
         return result
-
     if isinstance(result, dict):
-        # check_compatibility → compatible_parts list
         if "compatible_parts" in result:
             return result["compatible_parts"]
-        # check_compatibility with a specific part
         if "part" in result and result["part"]:
             return [result["part"]]
-        # troubleshoot_appliance → suggested_parts
         if "suggested_parts" in result:
             return result["suggested_parts"]
-        # get_part_details / get_install_instructions → single part shape
         if "part_number" in result:
             return [result]
-
     return []
 
 
 def _generate_chips(messages, assistant_reply):
-    """Suggest 2-3 on-topic follow-up questions based on the conversation."""
     prompt = (
         "You are a suggestion generator for a refrigerator and dishwasher parts support chat.\n\n"
         "Based on the conversation so far, suggest exactly 2-3 short follow-up questions the customer "
@@ -195,11 +180,11 @@ def _generate_chips(messages, assistant_reply):
         "- Never suggest anything unrelated to appliance parts or repair.\n"
         "- Never suggest something already answered in the last reply.\n"
         "- Each suggestion must be under 10 words.\n"
+        "- Every suggestion MUST be in English only. No other languages.\n"
         "- Return ONLY a valid JSON array of strings. No explanation, no markdown, no extra text.\n\n"
         f"Last assistant reply (for context — do not repeat what's already covered):\n{assistant_reply[:400]}\n\n"
         "JSON array:"
     )
-
     try:
         resp = ollama.chat(
             model="qwen2.5",
@@ -214,21 +199,20 @@ def _generate_chips(messages, assistant_reply):
         if start == -1 or end == -1:
             return []
         chips = json.loads(raw[start:end + 1])
-        # Post-filter: drop anything that doesn't mention an appliance-adjacent keyword
         _allowed = re.compile(
             r"part|install|compatib|troubleshoot|fix|repair|order|price|cost|model|dishwasher|refrigerator|fridge|replace|symptom|work|ice maker|door|pump|motor|filter|seal|hinge",
             re.IGNORECASE,
         )
-        filtered = [c for c in chips if isinstance(c, str) and _allowed.search(c)]
-        return filtered[:3]
+        _ascii_only = re.compile(r'^[\x00-\x7F]+$')
+        return [
+            c for c in chips
+            if isinstance(c, str) and _allowed.search(c) and _ascii_only.match(c)
+        ][:3]
     except Exception:
-        pass
-
-    return []
+        return []
 
 
 def _is_unsafe(text: str) -> bool:
-    """Use a dedicated LLM call to classify whether a message is a jailbreak/out-of-scope attempt."""
     try:
         resp = ollama.chat(
             model="qwen2.5",
@@ -237,18 +221,26 @@ def _is_unsafe(text: str) -> bool:
                 {"role": "user", "content": text[:1000]},
             ],
         )
-        verdict = resp["message"]["content"].strip().upper()
-        return verdict.startswith("UNSAFE")
+        return resp["message"]["content"].strip().upper().startswith("UNSAFE")
     except Exception:
-        # Fail open — let the hardened system prompt handle it
         return False
 
 
-async def run_agent(user_message, history=[], mode_addendum=""):
+def stream_agent(user_message, history=[], mode_addendum=""):
+    """
+    Sync generator that yields SSE-formatted strings.
 
-    # Pre-LLM guard: dedicated classifier rejects jailbreaks and off-topic messages
+    Flow:
+      1. Safety guard (non-streaming LLM call)
+      2. Tool call loop (non-streaming — fast data lookups)
+      3. Final answer streamed token-by-token
+      4. done event with parts/chips/detected_model
+    """
+    # ── Safety guard ──
     if _is_unsafe(user_message):
-        return _INJECTION_REPLY, [], [], None
+        yield f"data: {json.dumps({'type': 'token', 'content': _INJECTION_REPLY})}\n\n"
+        yield f"data: {json.dumps({'type': 'done', 'parts': [], 'chips': [], 'detected_model': None})}\n\n"
+        return
 
     prior = [
         {"role": m.role, "content": m.content[:500]}
@@ -257,7 +249,6 @@ async def run_agent(user_message, history=[], mode_addendum=""):
     ]
 
     system_content = SYSTEM_PROMPT + (mode_addendum or "")
-
     messages = [
         {"role": "system", "content": system_content},
         *prior,
@@ -268,35 +259,24 @@ async def run_agent(user_message, history=[], mode_addendum=""):
     seen_part_numbers = set()
     detected_model = None
 
+    # ── Tool call loop (non-streaming) ──
     while True:
-
-        response = ollama.chat(
-            model="qwen2.5",
-            messages=messages,
-            tools=TOOLS_SCHEMA
-        )
-
+        response = ollama.chat(model="qwen2.5", messages=messages, tools=TOOLS_SCHEMA)
         assistant_message = response["message"]
-        messages.append(assistant_message)
-
         tool_calls = assistant_message.get("tool_calls", [])
 
         if not tool_calls:
-            reply = assistant_message["content"]
-            # Fallback: regex scan the user message if no tool gave us a model
-            if not detected_model:
-                match = _MODEL_NUMBER_RE.search(user_message.upper())
-                if match:
-                    detected_model = match.group(1)
-            chips = _generate_chips(messages, reply)
-            return reply, collected_parts, chips, detected_model
+            # No more tool calls — ready to stream the final answer.
+            # Don't use this response; make a fresh streaming call below.
+            break
+
+        messages.append(assistant_message)
 
         for tool_call in tool_calls:
             tool_name = tool_call["function"]["name"]
             args = tool_call["function"]["arguments"]
             result = TOOLS[tool_name](**args)
 
-            # Capture model number from compatibility checks
             if tool_name == "check_compatibility" and not detected_model:
                 detected_model = args.get("model_number")
 
@@ -307,3 +287,24 @@ async def run_agent(user_message, history=[], mode_addendum=""):
                     collected_parts.append(part)
 
             messages.append({"role": "tool", "content": json.dumps(result)})
+
+    # ── Stream final answer ──
+    full_reply = ""
+    stream = ollama.chat(model="qwen2.5", messages=messages, stream=True)
+    for chunk in stream:
+        token = chunk.get("message", {}).get("content", "")
+        if token:
+            full_reply += token
+            yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
+
+    # ── Fallback model detection ──
+    if not detected_model:
+        match = _MODEL_NUMBER_RE.search(user_message.upper())
+        if match:
+            detected_model = match.group(1)
+
+    # ── Chips (separate LLM call after streaming) ──
+    messages.append({"role": "assistant", "content": full_reply})
+    chips = _generate_chips(messages, full_reply)
+
+    yield f"data: {json.dumps({'type': 'done', 'parts': collected_parts, 'chips': chips, 'detected_model': detected_model})}\n\n"
