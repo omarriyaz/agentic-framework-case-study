@@ -23,15 +23,19 @@ function ChatWindow() {
       scrollToBottom();
   }, [messages]);
 
-  const handleSend = async (input) => {
-    if (input.trim() !== "") {
-      // Set user message
-      setMessages(prevMessages => [...prevMessages, { role: "user", content: input }]);
-      setInput("");
+  const handleSend = async () => {
+    if (input.trim() === "") return;
 
-      // Call API & set assistant message
-      const newMessage = await getAIMessage(input);
-      setMessages(prevMessages => [...prevMessages, newMessage]);
+    const userText = input;
+    setMessages(prev => [...prev, { role: "user", content: userText }]);
+    setInput("");
+
+    try {
+      const newMessage = await getAIMessage(userText);
+      setMessages(prev => [...prev, newMessage]);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
+      console.error(err);
     }
   };
 
@@ -54,7 +58,7 @@ function ChatWindow() {
               placeholder="Type a message..."
               onKeyPress={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
-                  handleSend(input);
+                  handleSend();
                   e.preventDefault();
                 }
               }}

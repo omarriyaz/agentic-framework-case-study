@@ -9,11 +9,12 @@ TOOLS_SCHEMA = [
         "type": "function",
         "function": {
             "name": "search_parts",
-            "description": "Search appliance parts",
+            "description": "Search for refrigerator or dishwasher parts by keyword, part number, brand, or symptom description",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {"type": "string"}
+                    "query": {"type": "string", "description": "Search keyword, symptom, or part name"},
+                    "category": {"type": "string", "enum": ["Refrigerator", "Dishwasher"], "description": "Optional: filter by appliance type"}
                 },
                 "required": ["query"]
             }
@@ -37,17 +38,14 @@ TOOLS_SCHEMA = [
         "type": "function",
         "function": {
             "name": "check_compatibility",
-            "description": "Check model compatibility",
+            "description": "Check if a part is compatible with a model, or list all compatible parts for a model",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "model_number": {"type": "string"},
-                    "part_number": {"type": "string"}
+                    "model_number": {"type": "string", "description": "The appliance model number"},
+                    "part_number": {"type": "string", "description": "Optional: a specific part number to check against the model"}
                 },
-                "required": [
-                    "model_number",
-                    "part_number"
-                ]
+                "required": ["model_number"]
             }
         }
     },
@@ -55,11 +53,11 @@ TOOLS_SCHEMA = [
         "type": "function",
         "function": {
             "name": "troubleshoot_appliance",
-            "description": "Troubleshoot appliance issues",
+            "description": "Get a step-by-step troubleshooting guide for a refrigerator or dishwasher issue, along with suggested replacement parts",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "issue": {"type": "string"}
+                    "issue": {"type": "string", "description": "Description of the appliance problem"}
                 },
                 "required": ["issue"]
             }
