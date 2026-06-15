@@ -1,70 +1,115 @@
-# Getting Started with Create React App
+# PartSelect AI Assistant
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A chat agent for the PartSelect e-commerce site, focused on refrigerator and dishwasher parts. Customers can describe a symptom, look up a part number, check compatibility with their model, get installation instructions, and add parts to cart,  all through a single conversational interface.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Architecture
 
-### `npm start`
+```
+Browser (React)
+    │  SSE stream (token by token)
+    ▼
+FastAPI
+    ├── Safety classifier (dedicated LLM call, runs before anything else)
+    └── Agent loop
+            ├── Tool calls (non-streaming — fast data lookups)
+            └── Final response (streaming via ollama stream=True)
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+The agent runs on a local [Ollama](https://ollama.com) instance using `qwen2.5`. The tool loop and the final response are intentionally split: tools resolve first because they're just data lookups, then the answer streams token by token over SSE. This avoids the long wait followed by everything dumping at once.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## Features
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+**Agent tools (8 total)**
+- `search_parts` — TF-IDF keyword/symptom search with optional category filter and rating boost
+- `get_part_details` — lookup by PS part number
+- `get_install_instructions` — returns full description for step-by-step install guidance
+- `check_compatibility` — checks a part against a model number using a pre-built compatibility index
+- `troubleshoot_appliance` — returns ranked causes (cheapest/easiest first), diagnostic steps, and suggested parts
+- `get_related_parts` — surfaces commonly co-replaced parts (repair bundles)
+- `add_to_cart` — adds to session cart and triggers related parts
+- `get_order_status` — order lookup
 
-### `npm run build`
+**Homeowner / Technician mode**
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+A toggle in the header switches the audience. In homeowner mode the agent uses plain language, leads with visual checks, and flags complex repairs as "call a technician." In technician mode it leads with part numbers and OEM status, includes voltage/resistance test values, uses industry abbreviations and ranks failure modes by likelihood. Implemented as a prompt injected at request time on top of the base system prompt.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+**Guided flows**
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The `+` button opens five structured flows that live inline in the chat thread: diagnose an issue (button tree), find parts by model, check compatibility, browse by category, and order status. Each flow collects the necessary inputs and fires a real agent query.
 
-### `npm run eject`
+**Security**
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Two layers. A dedicated safety classifier LLM call runs before every message reaches the agent, it returns `SAFE` or `UNSAFE` and blocks jailbreak attempts, identity claims, instruction overrides, and out-of-scope requests. A hardened system prompt backs this up, explicitly listing injection patterns and instructing the model not to acknowledge them. The classifier fails open so an error never silently blocks a real customer.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+**Part cards**
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Parts returned by any tool render as structured cards outside the chat bubble: real product photo, name, part number, brand, category, star rating, price, install difficulty/time, and OEM badge. Images are suppressed in chat text to keep the message flow clean.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+**Follow-up chips**
 
-## Learn More
+After each response, 2–3 suggested follow-ups are generated by a separate LLM call, post-filtered by an appliance keyword regex and an ASCII guard (prevents mixed-language suggestions).
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+**Model memory**
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+When a model number is detected (from a tool call or regex scan of the user message), it's stored in React state and shown as a pill in the header. All subsequent requests include it as context automatically.
 
-### Code Splitting
+**Voice input**
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Web Speech API integration on the input bar. Works in Chrome and Edge.
 
-### Analyzing the Bundle Size
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Data
 
-### Making a Progressive Web App
+250 parts scraped from PartSelect using Playwright (headless Chromium, BFS crawl from seed URLs, stealth headers to avoid bot detection). Fields per part: name, price, brand, category, description, compatible models, product photo URL, star rating, OEM flag, and manufacturer cross-reference numbers.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Two data files are built from the scrape:
+- `products.json` — 250 parts across 6 brands (Whirlpool, GE, Frigidaire, Bosch, Samsung, LG)
+- `compatibility.json` — inverted index mapping 3,643 appliance model numbers to their compatible parts
 
-### Advanced Configuration
+Search is TF-IDF over name + description + brand + category. Highly-rated parts get a small score boost so quality surfaces naturally without any manual curation.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+---
 
-### Deployment
+## Stack
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+| Layer | Tech |
+|---|---|
+| Frontend | React, marked (markdown), Web Speech API |
+| Backend | FastAPI, Ollama (qwen2.5) |
+| Search | scikit-learn TF-IDF |
+| Scraper | Playwright (async, headless Chromium) |
+| Streaming | Server-Sent Events |
 
-### `npm run build` fails to minify
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Setup
+
+**Backend**
+```bash
+cd backend
+pip install -r requirements.txt
+playwright install chromium
+uvicorn app:main --reload
+```
+
+**Frontend**
+```bash
+npm install
+npm start
+```
+
+**Rescrape parts** (optional — `products.json` is included)
+```bash
+cd backend
+python -m scraper.scrape_partselect_playwright
+```
+
+Ollama must be running locally with `qwen2.5` pulled:
+```bash
+ollama pull qwen2.5
+```
