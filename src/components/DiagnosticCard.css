@@ -1,0 +1,90 @@
+.diagnostic-card {
+  background: white;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  max-width: 380px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.diagnostic-prompt {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1b3875;
+  margin-bottom: 12px;
+}
+
+.diagnostic-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.diagnostic-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f8faff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #111;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.diagnostic-option:hover {
+  border-color: #1b3875;
+  background: #eef2ff;
+  transform: translateX(3px);
+}
+
+.diagnostic-icon {
+  font-size: 16px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ── Input step ── */
+
+.flow-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.flow-input {
+  flex: 1;
+  padding: 9px 13px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: "Inter", sans-serif;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.flow-input:focus {
+  border-color: #1b3875;
+}
+
+.flow-submit {
+  padding: 9px 16px;
+  background: #1b3875;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.flow-submit:hover {
+  background: #e8202a;
+}

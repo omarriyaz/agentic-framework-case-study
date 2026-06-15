@@ -3,7 +3,7 @@ import "./PartCard.css";
 
 function PartCard({ part, onAddToCart }) {
   const hasPrice =
-    part.price && !String(part.price).toLowerCase().includes("see");
+    part.price && !String(part.price).toLowerCase().includes("see") && !isNaN(Number(part.price));
 
   return (
     <div className="part-card">
@@ -23,7 +23,7 @@ function PartCard({ part, onAddToCart }) {
         </div>
         <div className="part-card-price">
           {hasPrice ? (
-            <span className="price-value">${part.price}</span>
+            <span className="price-value">${Number(part.price).toFixed(2)}</span>
           ) : (
             <span className="price-check">
               <a href={part.url} target="_blank" rel="noreferrer">
@@ -32,6 +32,14 @@ function PartCard({ part, onAddToCart }) {
             </span>
           )}
         </div>
+        {part.install && (
+          <div className="part-card-install">
+            <span className={`difficulty-badge difficulty-${part.install.difficulty?.toLowerCase().replace(" ", "-")}`}>
+              {part.install.difficulty}
+            </span>
+            <span className="install-time">{part.install.time}</span>
+          </div>
+        )}
       </div>
       <div className="part-card-actions">
         <a

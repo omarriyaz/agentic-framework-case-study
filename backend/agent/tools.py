@@ -38,6 +38,7 @@ def _summarise(product):
         "price": product.get("price") or "See PartSelect website for current price",
         "description": product.get("description", "")[:150] if product.get("description") else None,
         "url": product.get("url"),
+        "install": _get_difficulty(product.get("name", "")),
     }
 
 def search_parts(query: str, category: str = None):
@@ -113,27 +114,40 @@ def check_compatibility(
 
 TROUBLESHOOTING_GUIDES = {
     "ice maker": {
-        "steps": [
-            "Verify the water supply line is connected and the shutoff valve is open.",
-            "Check the water inlet valve for clogs or failure.",
-            "Inspect the ice maker assembly for visible damage.",
-            "Ensure the freezer temperature is at or below 10°F (-12°C).",
-            "Check that the ice maker's power switch is turned on.",
-        ],
         "keywords": ["ice", "ice maker", "no ice", "ice not making"],
+        "causes": [
+            {"rank": 1, "cause": "Ice maker power switch is off", "cost": "Free", "difficulty": "Easy", "time": "1 min"},
+            {"rank": 2, "cause": "Freezer temperature too warm (above 10°F)", "cost": "Free", "difficulty": "Easy", "time": "5 min"},
+            {"rank": 3, "cause": "Water supply line kinked or shutoff valve closed", "cost": "Free", "difficulty": "Easy", "time": "10 min"},
+            {"rank": 4, "cause": "Faulty water inlet valve", "cost": "$20–$50", "difficulty": "Moderate", "time": "30 min"},
+            {"rank": 5, "cause": "Ice maker assembly failure", "cost": "$50–$150", "difficulty": "Moderate", "time": "45 min"},
+        ],
+        "steps": [
+            "Verify the ice maker power switch is turned on.",
+            "Ensure the freezer temperature is at or below 10°F (-12°C).",
+            "Check the water supply line is connected and the shutoff valve is open.",
+            "Test the water inlet valve for clogs or electrical failure.",
+            "Inspect the ice maker assembly for damage and replace if needed.",
+        ],
         "part_queries": [
             ("ice maker assembly", "Refrigerator"),
             ("water inlet valve", "Refrigerator"),
         ],
     },
     "dishwasher not draining": {
-        "steps": [
-            "Check the drain hose for kinks or clogs.",
-            "Clean the dishwasher filter at the bottom of the tub.",
-            "Inspect the drain pump for obstructions.",
-            "Ensure the garbage disposal knockout plug is removed if newly installed.",
-        ],
         "keywords": ["drain", "water pooling", "standing water", "not draining"],
+        "causes": [
+            {"rank": 1, "cause": "Clogged filter or food debris in drain area", "cost": "Free", "difficulty": "Easy", "time": "10 min"},
+            {"rank": 2, "cause": "Kinked or clogged drain hose", "cost": "Free–$15", "difficulty": "Easy", "time": "15 min"},
+            {"rank": 3, "cause": "Garbage disposal knockout plug not removed", "cost": "Free", "difficulty": "Easy", "time": "5 min"},
+            {"rank": 4, "cause": "Faulty drain pump", "cost": "$30–$80", "difficulty": "Moderate", "time": "1 hour"},
+        ],
+        "steps": [
+            "Clean the dishwasher filter at the bottom of the tub.",
+            "Check the drain hose for kinks or clogs.",
+            "Ensure the garbage disposal knockout plug is removed if newly installed.",
+            "Inspect and test the drain pump — replace if it won't run.",
+        ],
         "part_queries": [
             ("drain pump", "Dishwasher"),
             ("drain hose", "Dishwasher"),
@@ -141,13 +155,19 @@ TROUBLESHOOTING_GUIDES = {
         ],
     },
     "dishwasher not cleaning": {
-        "steps": [
-            "Clean the spray arms — check for clogged holes.",
-            "Ensure the water temperature reaches 120°F.",
-            "Check detergent dispenser is working correctly.",
-            "Inspect the wash pump for wear.",
-        ],
         "keywords": ["not cleaning", "dirty dishes", "dishes still dirty", "spots"],
+        "causes": [
+            {"rank": 1, "cause": "Clogged spray arm holes", "cost": "Free", "difficulty": "Easy", "time": "10 min"},
+            {"rank": 2, "cause": "Water temperature below 120°F", "cost": "Free", "difficulty": "Easy", "time": "5 min"},
+            {"rank": 3, "cause": "Detergent dispenser not opening", "cost": "$15–$40", "difficulty": "Easy", "time": "20 min"},
+            {"rank": 4, "cause": "Worn or failed wash pump", "cost": "$50–$120", "difficulty": "Advanced", "time": "2 hours"},
+        ],
+        "steps": [
+            "Remove and clean the spray arms — clear any clogged holes with a toothpick.",
+            "Run the hot water at the sink before starting a cycle to ensure 120°F water.",
+            "Inspect the detergent dispenser door — replace if it sticks or won't latch.",
+            "Test the wash pump motor for continuity and replace if failed.",
+        ],
         "part_queries": [
             ("spray arm", "Dishwasher"),
             ("wash pump", "Dishwasher"),
@@ -155,29 +175,42 @@ TROUBLESHOOTING_GUIDES = {
         ],
     },
     "refrigerator not cooling": {
-        "steps": [
-            "Check the condenser coils — clean if dusty.",
-            "Ensure the condenser fan is spinning.",
-            "Verify the evaporator fan is running.",
-            "Check the door gaskets for a good seal.",
-            "Inspect the start relay on the compressor.",
-        ],
         "keywords": ["not cooling", "warm", "not cold", "temperature too high"],
+        "causes": [
+            {"rank": 1, "cause": "Dirty condenser coils restricting airflow", "cost": "Free", "difficulty": "Easy", "time": "15 min"},
+            {"rank": 2, "cause": "Door gasket not sealing — warm air leaking in", "cost": "$20–$60", "difficulty": "Easy", "time": "20 min"},
+            {"rank": 3, "cause": "Evaporator fan not circulating cold air", "cost": "$30–$80", "difficulty": "Moderate", "time": "1 hour"},
+            {"rank": 4, "cause": "Faulty start relay preventing compressor from starting", "cost": "$10–$30", "difficulty": "Moderate", "time": "30 min"},
+            {"rank": 5, "cause": "Compressor failure", "cost": "$200–$500+", "difficulty": "Advanced", "time": "Professional recommended"},
+        ],
+        "steps": [
+            "Clean the condenser coils with a vacuum or brush.",
+            "Inspect door gaskets — close a dollar bill in the door; if it slides out easily, replace the gasket.",
+            "Listen for the evaporator fan — if silent, test and replace the motor.",
+            "Shake the start relay (on the compressor side) — a rattling sound means replace it.",
+            "If none of the above, have a technician inspect the compressor.",
+        ],
         "part_queries": [
-            ("condenser fan", "Refrigerator"),
             ("evaporator fan", "Refrigerator"),
             ("door gasket", "Refrigerator"),
             ("start relay", "Refrigerator"),
+            ("condenser fan", "Refrigerator"),
         ],
     },
     "refrigerator leaking": {
-        "steps": [
-            "Check the defrost drain for clogs — flush with warm water.",
-            "Inspect the water inlet valve for leaks.",
-            "Examine the ice maker water line connections.",
-            "Check door gaskets for damage causing condensation.",
-        ],
         "keywords": ["leak", "leaking", "water on floor", "water inside"],
+        "causes": [
+            {"rank": 1, "cause": "Clogged defrost drain — ice dam forcing water out", "cost": "Free", "difficulty": "Easy", "time": "20 min"},
+            {"rank": 2, "cause": "Cracked or loose water inlet valve connection", "cost": "$20–$50", "difficulty": "Moderate", "time": "30 min"},
+            {"rank": 3, "cause": "Ice maker water line loose or cracked", "cost": "$10–$25", "difficulty": "Easy", "time": "20 min"},
+            {"rank": 4, "cause": "Damaged door gasket causing condensation", "cost": "$20–$60", "difficulty": "Easy", "time": "20 min"},
+        ],
+        "steps": [
+            "Flush the defrost drain with warm water using a turkey baster.",
+            "Inspect the water inlet valve and its connections for drips.",
+            "Trace the ice maker water line from the back of the fridge to the valve.",
+            "Check door gaskets for tears or gaps that could cause condensation pooling.",
+        ],
         "part_queries": [
             ("water inlet valve", "Refrigerator"),
             ("drain", "Refrigerator"),
@@ -218,8 +251,81 @@ def troubleshoot_appliance(issue: str):
             break
 
     return {
+        "ranked_causes": best_match["causes"],
         "steps": best_match["steps"],
         "suggested_parts": suggested_parts,
+    }
+
+INSTALL_DIFFICULTY = {
+    "ice maker": {"difficulty": "Moderate", "time": "45 min", "tools": "Screwdriver, nut driver"},
+    "water inlet valve": {"difficulty": "Moderate", "time": "30 min", "tools": "Screwdriver, pliers, bucket"},
+    "drain pump": {"difficulty": "Moderate", "time": "1 hour", "tools": "Screwdriver, pliers, towels"},
+    "spray arm": {"difficulty": "Easy", "time": "10 min", "tools": "None — tool-free snap fit"},
+    "door gasket": {"difficulty": "Easy", "time": "20 min", "tools": "Flathead screwdriver"},
+    "door bin": {"difficulty": "Easy", "time": "2 min", "tools": "None — tool-free snap fit"},
+    "shelf bin": {"difficulty": "Easy", "time": "2 min", "tools": "None — tool-free snap fit"},
+    "crisper drawer": {"difficulty": "Easy", "time": "5 min", "tools": "None"},
+    "evaporator fan": {"difficulty": "Moderate", "time": "1 hour", "tools": "Screwdriver, nut driver"},
+    "condenser fan": {"difficulty": "Moderate", "time": "45 min", "tools": "Screwdriver, nut driver"},
+    "start relay": {"difficulty": "Easy", "time": "15 min", "tools": "None — pull and replace"},
+    "detergent dispenser": {"difficulty": "Easy", "time": "20 min", "tools": "Screwdriver"},
+    "wash pump": {"difficulty": "Advanced", "time": "2 hours", "tools": "Screwdriver, pliers, multimeter"},
+    "drain hose": {"difficulty": "Easy", "time": "20 min", "tools": "Pliers, bucket"},
+}
+
+def _get_difficulty(name: str):
+    name_lower = name.lower()
+    for keyword, info in INSTALL_DIFFICULTY.items():
+        if keyword in name_lower:
+            return info
+    return {"difficulty": "Moderate", "time": "30–60 min", "tools": "Screwdriver"}
+
+REPAIR_BUNDLES = {
+    "ice maker": ["water inlet valve", "ice maker fill tube", "ice maker assembly"],
+    "water inlet valve": ["ice maker assembly", "water line", "ice maker fill tube"],
+    "drain pump": ["drain hose", "door gasket", "filter"],
+    "spray arm": ["wash pump", "detergent dispenser", "door gasket"],
+    "evaporator fan": ["start relay", "door gasket", "condenser fan"],
+    "door gasket": ["door hinge", "door handle"],
+    "start relay": ["evaporator fan", "condenser fan"],
+    "detergent dispenser": ["spray arm", "door latch"],
+    "condenser fan": ["evaporator fan", "start relay"],
+    "defrost": ["evaporator fan", "door gasket"],
+}
+
+def get_related_parts(part_number: str):
+    """Return parts commonly replaced together with the given part."""
+    part = get_part_details(part_number)
+    if "error" in part:
+        return {"error": "Part not found"}
+
+    name_lower = part.get("name", "").lower()
+
+    related_queries = []
+    for keyword, companions in REPAIR_BUNDLES.items():
+        if keyword in name_lower:
+            related_queries = companions
+            break
+
+    if not related_queries:
+        return {"related_parts": [], "message": "No bundle data for this part."}
+
+    seen = {part_number}
+    related = []
+    category = part.get("category")
+    for query in related_queries:
+        for candidate in search_parts(query, category=category):
+            if candidate["part_number"] not in seen:
+                seen.add(candidate["part_number"])
+                related.append(candidate)
+                break
+        if len(related) == 3:
+            break
+
+    return {
+        "part": part,
+        "related_parts": related,
+        "message": f"Customers replacing {part['name']} also commonly replace these parts."
     }
 
 def add_to_cart(part_number: str):
@@ -246,6 +352,7 @@ TOOLS = {
     "search_parts": search_parts,
     "get_part_details": get_part_details,
     "get_install_instructions": get_install_instructions,
+    "get_related_parts": get_related_parts,
     "check_compatibility": check_compatibility,
     "troubleshoot_appliance": troubleshoot_appliance,
     "add_to_cart": add_to_cart,

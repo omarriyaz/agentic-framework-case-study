@@ -112,6 +112,31 @@
   text-decoration: underline;
 }
 
+.part-card-install {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+.difficulty-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.difficulty-easy       { background: #dcfce7; color: #15803d; }
+.difficulty-moderate   { background: #fef9c3; color: #a16207; }
+.difficulty-advanced   { background: #fee2e2; color: #b91c1c; }
+
+.install-time {
+  font-size: 11px;
+  color: #6b7280;
+}
+
 .part-card-actions {
   display: flex;
   flex-direction: column;

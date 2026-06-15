@@ -1,8 +1,12 @@
 export const getAIMessage = async (userQuery, history = [], rememberedModel = null) => {
+  const cleanHistory = history
+    .filter(m => (m.role === "user" || m.role === "assistant") && m.content)
+    .map(m => ({ role: m.role, content: m.content }));
+
   const res = await fetch("http://localhost:8000/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: userQuery, history, remembered_model: rememberedModel }),
+    body: JSON.stringify({ message: userQuery, history: cleanHistory, remembered_model: rememberedModel }),
   });
 
   const data = await res.json();

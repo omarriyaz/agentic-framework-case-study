@@ -55,6 +55,20 @@ TOOLS_SCHEMA = [
     {
         "type": "function",
         "function": {
+            "name": "get_related_parts",
+            "description": "Get parts commonly replaced together with a given part. Call this when a user adds a part to their cart or asks what else they might need for a repair.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "part_number": {"type": "string", "description": "The part number to find bundle companions for"}
+                },
+                "required": ["part_number"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "check_compatibility",
             "description": "Check if a part is compatible with a model, or list all compatible parts for a model",
             "parameters": {
