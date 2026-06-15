@@ -1,25 +1,68 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 * {
   font-family: "Inter", sans-serif;
-  font-size: 14px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #f0f2f5;
 }
 
 .App {
-  background-color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 
-.heading {
+.app-header {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  background: rgba(255, 255, 255); 
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  height: 64px;
+  background: #1b3875;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  z-index: 100;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-title {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.header-title-main {
+  color: white;
   font-weight: 700;
   font-size: 16px;
-  justify-content: center;
-  align-items: center;
-  height: 60px;
+}
+
+.header-title-sub {
+  color: rgba(255,255,255,0.65);
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.header-badge {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.85);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.2);
 }
