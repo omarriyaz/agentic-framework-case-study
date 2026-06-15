@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import "./ChatWindow.css";
 import { getAIMessage } from "../api/api";
 import { marked } from "marked";
+import PartCard from "./PartCard";
 
 function ChatWindow() {
 
   const defaultMessage = [{
     role: "assistant",
-    content: "Hi, how can I help you today?"
+    content: "Hi! I can help you find refrigerator and dishwasher parts, check compatibility, and troubleshoot issues. What do you need help with?",
+    parts: [],
   }];
 
   const [messages, setMessages] = useState(defaultMessage);
@@ -16,19 +18,36 @@ function ChatWindow() {
 
   const messagesEndRef = useRef(null);
 
-  const scrollToBottom = () => {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-  };
-
   useEffect(() => {
-      scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleAddToCart = async (part) => {
+    try {
+      await fetch("http://localhost:8000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `Add part ${part.part_number} to my cart`,
+          history: messages,
+        }),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+
+    setMessages(prev => [...prev, {
+      role: "assistant",
+      content: `Added **${part.name}** (${part.part_number}) to your cart.`,
+      parts: [],
+    }]);
+  };
 
   const handleSend = async () => {
     if (input.trim() === "") return;
 
     const userText = input;
-    setMessages(prev => [...prev, { role: "user", content: userText }]);
+    setMessages(prev => [...prev, { role: "user", content: userText, parts: [] }]);
     setInput("");
 
     try {
@@ -36,7 +55,11 @@ function ChatWindow() {
       const newMessage = await getAIMessage(userText, messages);
       setMessages(prev => [...prev, newMessage]);
     } catch (err) {
-      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "Sorry, something went wrong. Please try again.",
+        parts: [],
+      }]);
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -44,55 +67,68 @@ function ChatWindow() {
   };
 
   return (
-      <div className="messages-container">
-          {messages.map((message, index) => (
-            <div key={index} className={`message-row ${message.role}-row`}>
-              {message.role === "assistant" && (
-                <div className="avatar assistant-avatar">PS</div>
-              )}
-              <div className={`message ${message.role}-message`}>
-                <div dangerouslySetInnerHTML={{ __html: marked(message.content).replace(/<p>|<\/p>/g, "") }} />
-              </div>
-              {message.role === "user" && (
-                <div className="avatar user-avatar">O</div>
-              )}
-            </div>
-          ))}
-          {isLoading && (
-            <div className="message-row assistant-row">
-              <div className="avatar assistant-avatar">PS</div>
-              <div className="message assistant-message typing-indicator">
-                <span /><span /><span />
-              </div>
-            </div>
+    <div className="messages-container">
+      {messages.map((message, index) => (
+        <div key={index} className={`message-row ${message.role}-row`}>
+          {message.role === "assistant" && (
+            <div className="avatar assistant-avatar">PS</div>
           )}
-          <div ref={messagesEndRef} />
-          <div className="input-area">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about parts, compatibility, or troubleshooting..."
-              disabled={isLoading}
-              onKeyPress={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  handleSend();
-                  e.preventDefault();
-                }
-              }}
-            />
-            <button className="send-button" onClick={handleSend} disabled={isLoading}>
-              {isLoading ? (
-                <span className="btn-spinner" />
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="22" y1="2" x2="11" y2="13" />
-                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                </svg>
-              )}
-            </button>
+          <div className="message-col">
+            <div className={`message ${message.role}-message`}>
+              <div dangerouslySetInnerHTML={{ __html: marked(message.content).replace(/<p>|<\/p>/g, "") }} />
+            </div>
+            {message.parts?.length > 0 && (
+              <div className="part-cards-grid">
+                {message.parts.map((part) => (
+                  <PartCard
+                    key={part.part_number}
+                    part={part}
+                    onAddToCart={handleAddToCart}
+                  />
+                ))}
+              </div>
+            )}
           </div>
+          {message.role === "user" && (
+            <div className="avatar user-avatar">O</div>
+          )}
+        </div>
+      ))}
+      {isLoading && (
+        <div className="message-row assistant-row">
+          <div className="avatar assistant-avatar">PS</div>
+          <div className="message assistant-message typing-indicator">
+            <span /><span /><span />
+          </div>
+        </div>
+      )}
+      <div ref={messagesEndRef} />
+      <div className="input-area">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask about parts, compatibility, or troubleshooting..."
+          disabled={isLoading}
+          onKeyPress={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              handleSend();
+              e.preventDefault();
+            }
+          }}
+        />
+        <button className="send-button" onClick={handleSend} disabled={isLoading}>
+          {isLoading ? (
+            <span className="btn-spinner" />
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          )}
+        </button>
       </div>
-);
+    </div>
+  );
 }
 
 export default ChatWindow;

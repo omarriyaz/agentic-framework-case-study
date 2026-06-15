@@ -10,5 +10,6 @@ export const getAIMessage = async (userQuery, history = []) => {
   return {
     role: "assistant",
     content: data.response,
+    parts: data.parts || [],
   };
 };
