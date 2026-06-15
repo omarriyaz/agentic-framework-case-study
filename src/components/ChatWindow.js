@@ -4,6 +4,7 @@ import { getAIMessage } from "../api/api";
 import { marked } from "marked";
 import PartCard from "./PartCard";
 
+
 function ChatWindow() {
 
   const defaultMessage = [{
@@ -43,10 +44,10 @@ function ChatWindow() {
     }]);
   };
 
-  const handleSend = async () => {
-    if (input.trim() === "") return;
+  const handleSend = async (override) => {
+    const userText = typeof override === "string" ? override : input;
+    if (userText.trim() === "") return;
 
-    const userText = input;
     setMessages(prev => [...prev, { role: "user", content: userText, parts: [] }]);
     setInput("");
 
@@ -66,34 +67,52 @@ function ChatWindow() {
     }
   };
 
+  const lastAssistantIndex = messages.map(m => m.role).lastIndexOf("assistant");
+
+  const sendChip = (text) => handleSend(text);
+
   return (
     <div className="messages-container">
-      {messages.map((message, index) => (
-        <div key={index} className={`message-row ${message.role}-row`}>
-          {message.role === "assistant" && (
-            <div className="avatar assistant-avatar">PS</div>
-          )}
-          <div className="message-col">
-            <div className={`message ${message.role}-message`}>
-              <div dangerouslySetInnerHTML={{ __html: marked(message.content).replace(/<p>|<\/p>/g, "") }} />
-            </div>
-            {message.parts?.length > 0 && (
-              <div className="part-cards-grid">
-                {message.parts.map((part) => (
-                  <PartCard
-                    key={part.part_number}
-                    part={part}
-                    onAddToCart={handleAddToCart}
-                  />
-                ))}
+      {messages.map((message, index) => {
+        const isLastAssistant = message.role === "assistant" && index === lastAssistantIndex;
+        const chips = isLastAssistant && !isLoading && index > 0 ? (message.chips || []) : [];
+
+        return (
+          <div key={index} className={`message-row ${message.role}-row`}>
+            {message.role === "assistant" && (
+              <div className="avatar assistant-avatar">PS</div>
+            )}
+            <div className="message-col">
+              <div className={`message ${message.role}-message`}>
+                <div dangerouslySetInnerHTML={{ __html: marked(message.content).replace(/<p>|<\/p>/g, "") }} />
               </div>
+              {message.parts?.length > 0 && (
+                <div className="part-cards-grid">
+                  {message.parts.map((part) => (
+                    <PartCard
+                      key={part.part_number}
+                      part={part}
+                      onAddToCart={handleAddToCart}
+                    />
+                  ))}
+                </div>
+              )}
+              {chips.length > 0 && (
+                <div className="chips-row">
+                  {chips.map((chip) => (
+                    <button key={chip} className="chip" onClick={() => sendChip(chip)}>
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {message.role === "user" && (
+              <div className="avatar user-avatar">O</div>
             )}
           </div>
-          {message.role === "user" && (
-            <div className="avatar user-avatar">O</div>
-          )}
-        </div>
-      ))}
+        );
+      })}
       {isLoading && (
         <div className="message-row assistant-row">
           <div className="avatar assistant-avatar">PS</div>

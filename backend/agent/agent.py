@@ -133,6 +133,37 @@ def _extract_parts(tool_name, result):
     return []
 
 
+def _generate_chips(messages, assistant_reply):
+    """Ask the LLM to suggest 2-3 natural follow-up questions given the conversation so far."""
+    prompt = (
+        "Based on this appliance parts support conversation, suggest exactly 2-3 short follow-up "
+        "questions the user might want to ask next. Return ONLY a JSON array of strings, no explanation. "
+        "Each question should be concise (under 10 words) and genuinely useful given what was just discussed. "
+        "Do not suggest anything already answered or visible on screen (e.g. don't suggest 'add to cart' "
+        "if part cards are shown, don't suggest 'how to install' if install steps were just given).\n\n"
+        f"Last assistant reply: {assistant_reply[:400]}"
+    )
+
+    try:
+        resp = ollama.chat(
+            model="qwen2.5",
+            messages=[
+                *messages[-4:],
+                {"role": "user", "content": prompt},
+            ],
+        )
+        raw = resp["message"]["content"].strip()
+        # Parse JSON array from response
+        start, end = raw.find("["), raw.rfind("]")
+        if start != -1 and end != -1:
+            chips = json.loads(raw[start:end + 1])
+            return [c for c in chips if isinstance(c, str)][:3]
+    except Exception:
+        pass
+
+    return []
+
+
 async def run_agent(user_message, history=[]):
 
     prior = [
@@ -164,14 +195,15 @@ async def run_agent(user_message, history=[]):
         tool_calls = assistant_message.get("tool_calls", [])
 
         if not tool_calls:
-            return assistant_message["content"], collected_parts
+            reply = assistant_message["content"]
+            chips = _generate_chips(messages, reply)
+            return reply, collected_parts, chips
 
         for tool_call in tool_calls:
             tool_name = tool_call["function"]["name"]
             args = tool_call["function"]["arguments"]
             result = TOOLS[tool_name](**args)
 
-            # Collect unique parts from this tool result
             for part in _extract_parts(tool_name, result):
                 pn = part.get("part_number")
                 if pn and pn not in seen_part_numbers:

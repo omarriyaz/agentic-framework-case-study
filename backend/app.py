@@ -23,5 +23,5 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    response, parts = await run_agent(req.message, req.history)
-    return {"response": response, "parts": parts}
+    response, parts, chips = await run_agent(req.message, req.history)
+    return {"response": response, "parts": parts, "chips": chips}

@@ -214,4 +214,32 @@
   to { transform: rotate(360deg); }
 }
 
+/* ── Follow-up chips ── */
+
+.chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chip {
+  background: white;
+  border: 1.5px solid #d1d5db;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1b3875;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  border-color: #1b3875;
+  background: #1b3875;
+  color: white;
+}
+
 ::-webkit-scrollbar { display: none; }
