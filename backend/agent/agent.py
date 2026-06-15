@@ -37,6 +37,20 @@ TOOLS_SCHEMA = [
     {
         "type": "function",
         "function": {
+            "name": "get_install_instructions",
+            "description": "Get installation instructions for a specific part by part number. Use this whenever a user asks how to install, replace, or fit a part.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "part_number": {"type": "string", "description": "The part number to get installation instructions for"}
+                },
+                "required": ["part_number"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "check_compatibility",
             "description": "Check if a part is compatible with a model, or list all compatible parts for a model",
             "parameters": {
@@ -93,17 +107,20 @@ TOOLS_SCHEMA = [
     }
 ]
 
-async def run_agent(user_message):
+async def run_agent(user_message, history=[]):
+
+    # Keep last 6 messages (3 turns) to stay within Ollama's context window
+    recent_history = history[-6:] if len(history) > 6 else history
+    prior = [
+        {"role": m.role, "content": m.content}
+        for m in recent_history
+        if m.role in ("user", "assistant")
+    ]
 
     messages = [
-        {
-            "role": "system",
-            "content": SYSTEM_PROMPT
-        },
-        {
-            "role": "user",
-            "content": user_message
-        }
+        {"role": "system", "content": SYSTEM_PROMPT},
+        *prior,
+        {"role": "user", "content": user_message},
     ]
 
     while True:

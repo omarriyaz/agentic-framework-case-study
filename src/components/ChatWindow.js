@@ -33,7 +33,7 @@ function ChatWindow() {
 
     try {
       setIsLoading(true);
-      const newMessage = await getAIMessage(userText);
+      const newMessage = await getAIMessage(userText, messages);
       setMessages(prev => [...prev, newMessage]);
     } catch (err) {
       setMessages(prev => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);

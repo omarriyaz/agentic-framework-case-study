@@ -13,16 +13,15 @@ app.add_middleware(
     allow_headers=["Content-Type"],
 )
 
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
 class ChatRequest(BaseModel):
     message: str
+    history: list[ChatMessage] = []
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
-
-    response = await run_agent(
-        req.message
-    )
-
-    return {
-        "response": response
-    }
+    response = await run_agent(req.message, req.history)
+    return {"response": response}
