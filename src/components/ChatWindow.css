@@ -56,13 +56,13 @@
 }
 
 .assistant-avatar {
-  background: #1b3875;
+  background: var(--brand, #337778);
   color: white;
 }
 
 .user-avatar {
-  background: #e8202a;
-  color: white;
+  background: var(--accent, #f3c04c);
+  color: #1a1a1a;
 }
 
 /* ── Bubbles ── */
@@ -76,7 +76,7 @@
 }
 
 .user-message {
-  background: #1b3875;
+  background: var(--brand, #337778);
   color: white;
   border-bottom-right-radius: 4px;
 }
@@ -85,7 +85,7 @@
   background: white;
   color: #1a1a1a;
   border-bottom-left-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px rgba(51,119,120,0.08);
 }
 
 .assistant-message ul,
@@ -99,7 +99,7 @@
 }
 
 .assistant-message strong {
-  color: #1b3875;
+  color: var(--brand, #337778);
 }
 
 /* ── Typing indicator ── */
@@ -115,7 +115,7 @@
 .typing-indicator span {
   width: 7px;
   height: 7px;
-  background: #aab4c4;
+  background: #b0c4c4;
   border-radius: 50%;
   display: inline-block;
   animation: bounce 1.2s infinite;
@@ -129,7 +129,7 @@
   30% { transform: translateY(-6px); }
 }
 
-/* ── Input wrapper (fixed container for diagnose bar + input) ── */
+/* ── Input wrapper ── */
 
 .input-wrapper {
   position: fixed;
@@ -137,8 +137,8 @@
   left: 0;
   width: 100%;
   background: white;
-  border-top: 1px solid #e5e7eb;
-  box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+  border-top: 1px solid #dde8e8;
+  box-shadow: 0 -2px 10px rgba(51,119,120,0.08);
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -155,9 +155,9 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid #ccd9d9;
   background: white;
-  color: #6b7280;
+  color: var(--muted, #6b7280);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -166,8 +166,8 @@
 }
 
 .flow-menu-btn:hover:not(:disabled) {
-  border-color: #1b3875;
-  color: #1b3875;
+  border-color: var(--brand, #337778);
+  color: var(--brand, #337778);
 }
 
 .flow-menu-btn:disabled {
@@ -180,9 +180,9 @@
   bottom: calc(100% + 10px);
   left: 0;
   background: white;
-  border: 1.5px solid #e5e7eb;
+  border: 1.5px solid #dde8e8;
   border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 28px rgba(51,119,120,0.14);
   width: 240px;
   overflow: hidden;
   animation: popup-in 0.15s ease;
@@ -214,11 +214,11 @@
   cursor: pointer;
   text-align: left;
   transition: background 0.1s;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid #f0f5f5;
 }
 
 .flow-menu-item:hover {
-  background: #f8faff;
+  background: #f0f5f5;
 }
 
 .flow-menu-label {
@@ -248,12 +248,12 @@
   margin: 0 auto;
   padding: 11px 16px;
   border-radius: 20px;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid #ccd9d9;
   font-size: 14px;
   font-family: "Inter", sans-serif;
   outline: none;
-  transition: border-color 0.2s;
-  background: #f9fafb;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #f5fafa;
   color: #111;
   resize: none;
   overflow: hidden;
@@ -264,8 +264,9 @@
 }
 
 .input-area textarea:focus {
-  border-color: #1b3875;
+  border-color: var(--brand, #337778);
   background: white;
+  box-shadow: 0 0 0 3px rgba(51,119,120,0.1);
 }
 
 .input-area textarea:disabled {
@@ -273,13 +274,15 @@
   cursor: not-allowed;
 }
 
+/* ── Mic button ── */
+
 .mic-button {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid #ccd9d9;
   background: white;
-  color: #6b7280;
+  color: var(--muted, #6b7280);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -289,8 +292,8 @@
 }
 
 .mic-button:hover:not(:disabled) {
-  border-color: #1b3875;
-  color: #1b3875;
+  border-color: var(--brand, #337778);
+  color: var(--brand, #337778);
 }
 
 .mic-button:disabled {
@@ -299,24 +302,26 @@
 }
 
 .mic-active {
-  border-color: #e8202a !important;
-  color: #e8202a !important;
-  background: #fff5f5 !important;
+  border-color: var(--accent, #f3c04c) !important;
+  color: #8a6a00 !important;
+  background: #fffbee !important;
   animation: pulse-ring 1.2s ease infinite;
 }
 
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(232, 32, 42, 0.3); }
-  70%  { box-shadow: 0 0 0 8px rgba(232, 32, 42, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(232, 32, 42, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(243, 192, 76, 0.4); }
+  70%  { box-shadow: 0 0 0 8px rgba(243, 192, 76, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(243, 192, 76, 0); }
 }
+
+/* ── Send button ── */
 
 .send-button {
   width: 42px;
   height: 42px;
   border-radius: 50%;
   border: none;
-  background: #1b3875;
+  background: var(--brand, #337778);
   color: white;
   cursor: pointer;
   display: flex;
@@ -327,7 +332,7 @@
 }
 
 .send-button:hover:not(:disabled) {
-  background: #e8202a;
+  background: var(--brand-dark, #265c5d);
 }
 
 .send-button:active:not(:disabled) {
@@ -366,20 +371,20 @@
 
 .chip {
   background: white;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid #ccd9d9;
   border-radius: 20px;
   padding: 6px 14px;
   font-size: 12px;
   font-weight: 500;
-  color: #1b3875;
+  color: var(--brand, #337778);
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, color 0.15s;
   white-space: nowrap;
 }
 
 .chip:hover {
-  border-color: #1b3875;
-  background: #1b3875;
+  border-color: var(--brand, #337778);
+  background: var(--brand, #337778);
   color: white;
 }
 

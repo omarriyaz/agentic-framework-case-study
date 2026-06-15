@@ -1,5 +1,17 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
+:root {
+  --brand:        #337778;
+  --brand-dark:   #265c5d;
+  --brand-light:  #e6f2f2;
+  --accent:       #f3c04c;
+  --accent-dark:  #d9a82e;
+  --text:         #1a1a1a;
+  --muted:        #6b7280;
+  --border:       #e5e7eb;
+  --bg:           #f0f4f4;
+}
+
 * {
   font-family: "Inter", sans-serif;
   box-sizing: border-box;
@@ -8,7 +20,7 @@
 }
 
 body {
-  background-color: #f0f2f5;
+  background-color: var(--bg);
 }
 
 .App {
@@ -17,18 +29,20 @@ body {
   height: 100vh;
 }
 
+/* ── Header ── */
+
 .app-header {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 64px;
-  background: #1b3875;
+  background: var(--brand);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  box-shadow: 0 2px 10px rgba(51, 119, 120, 0.35);
   z-index: 100;
 }
 
@@ -47,16 +61,19 @@ body {
 .header-title-main {
   color: white;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 17px;
+  letter-spacing: -0.2px;
 }
 
 .header-title-sub {
-  color: rgba(255,255,255,0.65);
-  font-size: 11px;
-  font-weight: 400;
+  color: rgba(255,255,255,0.6);
+  font-size: 10px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
 }
+
+/* ── Header right ── */
 
 .header-right {
   display: flex;
@@ -64,9 +81,11 @@ body {
   gap: 12px;
 }
 
+/* ── Mode toggle ── */
+
 .mode-toggle {
   display: flex;
-  background: rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.18);
   border-radius: 20px;
   padding: 3px;
   gap: 2px;
@@ -75,10 +94,10 @@ body {
 .mode-btn {
   background: transparent;
   border: none;
-  color: rgba(255,255,255,0.65);
+  color: rgba(255,255,255,0.6);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   padding: 5px 14px;
   border-radius: 17px;
   cursor: pointer;
@@ -88,34 +107,27 @@ body {
 
 .mode-btn:hover {
   color: white;
-  background: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.1);
 }
 
 .mode-btn--active {
-  background: white;
-  color: #c0392b;
+  background: var(--accent);
+  color: #1a1a1a;
 }
 
 .mode-btn--active:hover {
-  background: white;
-  color: #c0392b;
+  background: var(--accent-dark);
+  color: #1a1a1a;
 }
 
-.header-badge {
-  background: rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.85);
-  font-size: 11px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.2);
-}
+/* ── Model pill ── */
 
 .model-pill {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(232, 32, 42, 0.2);
-  border: 1px solid rgba(232, 32, 42, 0.5);
+  background: rgba(243, 192, 76, 0.2);
+  border: 1px solid rgba(243, 192, 76, 0.5);
   border-radius: 20px;
   padding: 5px 6px 5px 12px;
   animation: pill-in 0.25s ease;
