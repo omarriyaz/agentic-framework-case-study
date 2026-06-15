@@ -12,15 +12,16 @@ with open("data/compatibility.json", "r", encoding="utf-8") as f:
 with open("data/orders.json", "r", encoding="utf-8") as f:
     ORDERS = json.load(f)
 
-# Build TF-IDF index once at startup
+# Build TF-IDF index once at startup — include symptoms for better symptom→part matching
 _CORPUS = [
-    " ".join([
+    " ".join(filter(None, [
         p.get("name", ""),
         p.get("description", "") or "",
         p.get("brand", ""),
         p.get("category", ""),
         p.get("part_number", ""),
-    ])
+        " ".join(p.get("symptoms", [])),
+    ]))
     for p in PRODUCTS
 ]
 _VECTORIZER = TfidfVectorizer(ngram_range=(1, 2), stop_words="english")
@@ -30,6 +31,8 @@ cart = []
 
 def _summarise(product):
     """Return a compact dict — omit compatible_models to keep context small."""
+    rating = product.get("rating")
+    review_count = product.get("review_count", 0)
     return {
         "part_number": product.get("part_number"),
         "name": product.get("name"),
@@ -38,15 +41,27 @@ def _summarise(product):
         "price": product.get("price") or "See PartSelect website for current price",
         "description": product.get("description", "")[:150] if product.get("description") else None,
         "url": product.get("url"),
+        "image_url": product.get("image_url"),
         "install": _get_difficulty(product.get("name", "")),
+        "symptoms": product.get("symptoms", [])[:6],
+        "rating": rating,
+        "review_count": review_count,
+        "is_oem": product.get("is_oem", False),
+        "cross_refs": product.get("cross_refs", []),
     }
 
 def search_parts(query: str, category: str = None):
 
     query_vec = _VECTORIZER.transform([query])
-    scores = cosine_similarity(query_vec, _TFIDF_MATRIX).flatten()
+    scores = cosine_similarity(query_vec, _TFIDF_MATRIX).flatten().copy()
 
-    # Sort all products by relevance score, take top 20 candidates
+    # Boost highly-rated parts slightly so quality floats up
+    for i, product in enumerate(PRODUCTS):
+        rating = product.get("rating") or 0
+        review_count = product.get("review_count") or 0
+        if rating >= 4.5 and review_count >= 10:
+            scores[i] *= 1.1
+
     ranked_indices = np.argsort(scores)[::-1]
 
     results = []

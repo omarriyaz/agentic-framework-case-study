@@ -29,7 +29,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 log = logging.getLogger(__name__)
 
 BASE_URL = "https://www.partselect.com"
-TARGET_NEW_PARTS = 60
+TARGET_NEW_PARTS = 250
 REQUEST_DELAY = 1200  # ms between page loads
 
 STEALTH_SCRIPT = """
@@ -226,6 +226,63 @@ async def scrape_part(page: Page, slug: str, category_hint: str) -> Optional[tup
         if models:
             break
 
+    # ── Symptoms this part fixes ──
+    symptoms = []
+    for sel in [
+        ".pd__symptom-list li",
+        ".symptom-list__item",
+        "[class*='symptom'] li",
+        ".js-symptomList li",
+    ]:
+        els = await page.query_selector_all(sel)
+        if els:
+            symptoms = [(await el.inner_text()).strip() for el in els if (await el.inner_text()).strip()]
+            break
+
+    # ── Star rating & review count ──
+    rating = None
+    review_count = 0
+    rating_el = await page.query_selector("[itemprop='ratingValue']")
+    if rating_el:
+        raw_rating = await rating_el.get_attribute("content") or await rating_el.inner_text()
+        try:
+            rating = round(float(raw_rating.strip()), 1)
+        except (ValueError, AttributeError):
+            pass
+    review_el = await page.query_selector("[itemprop='reviewCount']")
+    if review_el:
+        try:
+            review_count = int((await review_el.inner_text()).strip().replace(",", ""))
+        except (ValueError, AttributeError):
+            pass
+
+    # ── Part image ──
+    image_url = None
+    for img_sel in [
+        ".pd__image img",
+        "[itemprop='image']",
+        ".main-part-image img",
+        "#PartImage img",
+    ]:
+        img_el = await page.query_selector(img_sel)
+        if img_el:
+            src = await img_el.get_attribute("src") or await img_el.get_attribute("data-src")
+            if src and src.startswith("http"):
+                image_url = src
+                break
+
+    # ── OEM vs aftermarket ──
+    oem_el = await page.query_selector(".pd__oem-badge, .oe-part-badge, [class*='oem']")
+    is_oem = oem_el is not None
+
+    # ── Cross-reference / superseded part number ──
+    cross_refs = []
+    for sel in [".pd__crossref__number", ".cross-ref-number", "[class*='crossref'] span"]:
+        els = await page.query_selector_all(sel)
+        if els:
+            cross_refs = [(await el.inner_text()).strip() for el in els if (await el.inner_text()).strip()]
+            break
+
     pn_match = re.match(r'/?(PS\d+)', slug)
     part_number = pn_match.group(1) if pn_match else slug
 
@@ -236,10 +293,11 @@ async def scrape_part(page: Page, slug: str, category_hint: str) -> Optional[tup
     }
 
     log.info(
-        "  ✓ %s | %s | %s | $%.2f | %d models | %d new URLs",
+        "  ✓ %s | %s | %s | $%.2f | %d models | %d symptoms | rating %.1f (%d reviews) | %d new URLs",
         part_number, category,
         (name[:40] + "...") if len(name) > 40 else name,
-        price or 0, len(models), len(new_slugs),
+        price or 0, len(models), len(symptoms),
+        rating or 0, review_count, len(new_slugs),
     )
 
     return {
@@ -251,6 +309,12 @@ async def scrape_part(page: Page, slug: str, category_hint: str) -> Optional[tup
         "url": url,
         "description": description,
         "compatible_models": list(set(models)),
+        "symptoms": symptoms,
+        "rating": rating,
+        "review_count": review_count,
+        "image_url": image_url,
+        "is_oem": is_oem,
+        "cross_refs": cross_refs,
     }, new_slugs
 
 
@@ -277,7 +341,7 @@ async def main():
     data_dir.mkdir(exist_ok=True)
 
     products_path = data_dir / "products.json"
-    products = json.loads(products_path.read_text()) if products_path.exists() else []
+    products = json.loads(products_path.read_text(encoding="utf-8")) if products_path.exists() else []
     log.info("Loaded %d existing products", len(products))
 
     already_scraped = {p["part_number"] for p in products}
